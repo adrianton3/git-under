@@ -101,9 +101,20 @@ function log () {
 	traverse(commitHash)
 }
 
+function branch (name) {
+	const head = nfs.readJson(headFile)
+
+	const commitHash = head.type === 'ref'
+		? nfs.read(`.ndr/${head.ref}`)
+		: head.hash
+
+	nfs.write(`.ndr/refs/${name}`, commitHash)
+}
+
 module.exports = {
 	init,
 	add,
 	commit: commitCommand,
 	log,
+	branch,
 }
