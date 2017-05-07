@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 
-./cleanup.sh
-cd scratch-project
+../tools/cleanup.sh
 node ../src/cli.js init

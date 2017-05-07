@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-rm -rf scratch-project/.ndr
+rm -rf .ndr
