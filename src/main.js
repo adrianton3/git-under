@@ -73,8 +73,37 @@ function commitCommand (message) {
 	}
 }
 
+function log () {
+	const head = nfs.readJson(headFile)
+
+	if (head.type === 'ref' && !nfs.exists(`.ndr/${head.ref}`)) {
+		console.log('your branch does not have any commits yet')
+		return
+	}
+
+	function traverse (commitHash) {
+		const commitObject = commit.retrieve(commitHash)
+
+		console.log(
+			commitHash.slice(0, 7),
+			commitObject.message
+		)
+
+		if (commitObject.parent) {
+			traverse(commitObject.parent)
+		}
+	}
+
+	const commitHash = head.type === 'ref'
+		? nfs.read(`.ndr/${head.ref}`)
+		: head.hash
+
+	traverse(commitHash)
+}
+
 module.exports = {
 	init,
 	add,
 	commit: commitCommand,
+	log,
 }
