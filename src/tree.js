@@ -1,5 +1,8 @@
 'use strict'
 
+const { join } = require('path')
+
+const nfs = require('./nice-fs')
 const object = require('./object')
 
 
@@ -40,11 +43,32 @@ function write (node) {
 	return object.store(JSON.stringify(entries))
 }
 
-function update (index) {
+function store (index) {
 	const root = build(index)
 	return write(root)
 }
 
+function retrieve (rootHash) {
+	function traverse (hash, partialPath) {
+		const nodes = JSON.parse(object.retrieve(hash))
+
+		nodes.forEach(({ type, hash, file }) => {
+			const newPartial = join(partialPath, file)
+
+			if (type === 'tree') {
+				nfs.mkdir(newPartial)
+				traverse(hash, newPartial)
+			} else {
+				const contents = object.retrieve(hash)
+				nfs.write(newPartial, contents)
+			}
+		})
+	}
+
+	traverse(rootHash, './')
+}
+
 module.exports = {
-	update,
+	store,
+	retrieve,
 }

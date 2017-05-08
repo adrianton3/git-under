@@ -9,6 +9,8 @@ const commit = require('./commit')
 
 const headFile = '.ndr/HEAD'
 
+Error.stackTraceLimit = Infinity
+
 function init () {
 	nfs.mkdir('.ndr')
 
@@ -26,7 +28,7 @@ function add (file) {
 
 function commitInitial (message) {
 	const indexValue = index.retrieve()
-	const treeHash = tree.update(indexValue)
+	const treeHash = tree.store(indexValue)
 
 	const commitHash = commit.store(message, treeHash, null)
 
@@ -37,7 +39,8 @@ function commitInitial (message) {
 
 function commitNoninitial (message) {
 	const indexValue = index.retrieve()
-	const candidateTreeHash = tree.update(indexValue)
+
+	const candidateTreeHash = tree.store(indexValue)
 
 	const head = nfs.readJson(headFile)
 
@@ -59,7 +62,7 @@ function commitNoninitial (message) {
 	if (head.type === 'ref') {
 		nfs.write(`.ndr/${head.ref}`, newCommitHash)
 	} else {
-		nfs.write(headFile, newCommitHash)
+		nfs.writeJson(headFile, { type: 'hash', hash: newCommitHash })
 	}
 }
 
@@ -111,10 +114,31 @@ function branch (name) {
 	nfs.write(`.ndr/refs/${name}`, commitHash)
 }
 
+function checkout (hashOrBranch) {
+	const isHash = /[\da-f]{7}/.test(hashOrBranch)
+
+	const commitHash = isHash
+		? hashOrBranch
+		: nfs.read(`.ndr/refs/${hashOrBranch}`)
+
+	const commitObject = commit.retrieve(commitHash)
+
+	tree.retrieve(commitObject.tree)
+
+	index.updateFromTree(commitObject.tree)
+
+	if (isHash) {
+		nfs.writeJson(headFile, { type: 'hash', hash: commitHash })
+	} else {
+		nfs.writeJson(headFile, { type: 'ref', ref: `refs/${hashOrBranch}` })
+	}
+}
+
 module.exports = {
 	init,
 	add,
 	commit: commitCommand,
 	log,
 	branch,
+	checkout,
 }

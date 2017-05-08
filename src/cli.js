@@ -6,6 +6,7 @@ const {
 	commit,
 	log,
 	branch,
+	checkout,
 } = require('./main')
 
 
@@ -15,6 +16,7 @@ const handlers = {
 	commit,
 	log,
 	branch,
+	checkout,
 }
 
 const command = process.argv[2]

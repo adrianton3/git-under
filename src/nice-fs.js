@@ -24,7 +24,9 @@ function exists (file) {
 }
 
 function mkdir (file) {
-	return fs.mkdirSync(file)
+	if (exists(file)) { return }
+
+	fs.mkdirSync(file)
 }
 
 module.exports = {
