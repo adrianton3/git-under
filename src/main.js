@@ -26,6 +26,14 @@ function add (file) {
 	index.add(file, hash)
 }
 
+function catFile (type, hash) {
+	console.log({
+		blob: object.retrieveBlob,
+		tree: object.retrieveTree,
+		commit: object.retrieveCommit,
+	}[type](hash))
+}
+
 function commitInitial (message) {
 	const indexValue = index.retrieve()
 	const treeHash = tree.store(indexValue)
@@ -141,4 +149,5 @@ module.exports = {
 	log,
 	branch,
 	checkout,
+	catFile,
 }
