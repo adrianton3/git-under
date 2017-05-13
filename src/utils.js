@@ -80,7 +80,7 @@ function findCommit (start, needleHash) {
 		return start
 	}
 
-	if (parent) {
+	if (start.parent) {
 		findCommit(start.parent)
 	}
 }
