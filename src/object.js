@@ -100,9 +100,41 @@ function retrieveTree (hash) {
 	return entries
 }
 
+function storeCommit ({ tree, parent, message }) {
+	const time = 1494221973
+
+	const parents = parent ? `parent ${parent}\n` : ``
+
+	const content =
+		`tree ${tree}\n` +
+		parents +
+		`author Author Name <author@example.com> ${time} +0000\n` +
+		`committer Committer Name <committer@example.com> ${time} +0000\n` +
+		`\n` +
+		message
+
+	return store(`commit ${content.length}\0${content}\n\n`)
+}
+
+function retrieveCommit (hash) {
+	const content = retrieve(hash)
+
+	const regex = /tree ([\da-f]{40})\n(parent ([\da-f]{40})\n)?author.+\ncommitter.+\n\n(.+)\n\n$/
+
+	const match = content.match(regex)
+
+	return {
+		tree: match[1],
+		parent: match[3],
+		message: match[4],
+	}
+}
+
 module.exports = {
 	storeBlob,
 	retrieveBlob,
 	storeTree,
 	retrieveTree,
+	storeCommit,
+	retrieveCommit,
 }
