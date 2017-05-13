@@ -17,7 +17,7 @@ function buildTree (commitHash) {
 	}
 
 	function traverseTree (hash) {
-		const nodes = JSON.parse(object.retrieve(hash))
+		const nodes = object.retrieveTree(hash)
 
 		const children = nodes.map(
 			({ type, hash }) =>

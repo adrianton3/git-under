@@ -4,17 +4,15 @@ const object = require('./object')
 
 
 function store (message, treeHash, parentHash) {
-	const commit = {
+	return object.storeCommit({
 		message,
 		tree: treeHash,
 		parent: parentHash,
-	}
-
-	return object.store(JSON.stringify(commit))
+	})
 }
 
 function retrieve (hash) {
-	return JSON.parse(object.retrieve(hash))
+	return object.retrieveCommit(hash)
 }
 
 module.exports = {

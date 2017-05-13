@@ -22,7 +22,7 @@ function init () {
 
 function add (file) {
 	const contents = nfs.read(file)
-	const hash = object.store(contents)
+	const hash = object.storeBlob(contents)
 	index.add(file, hash)
 }
 

@@ -28,7 +28,7 @@ function updateFromTree (treeHash) {
 	const index = {}
 
 	function traverse (treeHash, partialPath) {
-		const nodes = JSON.parse(object.retrieve(treeHash))
+		const nodes = object.retrieveTree(treeHash)
 
 		nodes.forEach(({ file, type, hash }) => {
 			const newPartial = join(partialPath, file)
