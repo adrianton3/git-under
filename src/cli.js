@@ -7,6 +7,7 @@ const {
 	log,
 	branch,
 	checkout,
+	catFile,
 } = require('./main')
 
 
@@ -17,8 +18,9 @@ const handlers = {
 	log,
 	branch,
 	checkout,
+	'cat-file': catFile,
 }
 
 const command = process.argv[2]
 
-handlers[command](process.argv[3])
+handlers[command](...process.argv.slice(3))

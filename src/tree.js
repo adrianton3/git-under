@@ -34,13 +34,13 @@ function build (index) {
 }
 
 function write (node) {
-	const entries = Object.keys(node).map((key) =>
-		typeof node[key] === 'string'
-			? { file: key, type: 'blob', hash: node[key] }
-			: { file: key, type: 'tree', hash: write(node[key]) }
+	const entries = Object.entries(node).map(([key, value]) =>
+		typeof value === 'string'
+			? { file: key, type: 'blob', hash: value }
+			: { file: key, type: 'tree', hash: write(value) }
 	)
 
-	return object.store(JSON.stringify(entries))
+	return object.storeTree(entries)
 }
 
 function store (index) {
@@ -50,7 +50,7 @@ function store (index) {
 
 function retrieve (rootHash) {
 	function traverse (hash, partialPath) {
-		const nodes = JSON.parse(object.retrieve(hash))
+		const nodes = object.retrieveTree(hash)
 
 		nodes.forEach(({ type, hash, file }) => {
 			const newPartial = join(partialPath, file)
@@ -59,7 +59,7 @@ function retrieve (rootHash) {
 				nfs.mkdir(newPartial)
 				traverse(hash, newPartial)
 			} else {
-				const contents = object.retrieve(hash)
+				const contents = object.retrieveBlob(hash)
 				nfs.write(newPartial, contents)
 			}
 		})

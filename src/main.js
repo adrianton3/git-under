@@ -22,8 +22,16 @@ function init () {
 
 function add (file) {
 	const contents = nfs.read(file)
-	const hash = object.store(contents)
+	const hash = object.storeBlob(contents)
 	index.add(file, hash)
+}
+
+function catFile (type, hash) {
+	console.log({
+		blob: object.retrieveBlob,
+		tree: object.retrieveTree,
+		commit: object.retrieveCommit,
+	}[type](hash))
 }
 
 function commitInitial (message) {
@@ -141,4 +149,5 @@ module.exports = {
 	log,
 	branch,
 	checkout,
+	catFile,
 }
