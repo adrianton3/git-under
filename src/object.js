@@ -53,7 +53,56 @@ function retrieveBlob (hash) {
 	return content.slice(content.indexOf('\0') + 1)
 }
 
+function packHash (string) {
+	return string.replace(/../g, (match) =>
+		String.fromCharCode(parseInt(match, 16))
+	)
+}
+
+function unpackHash (binary) {
+	return binary.replace(/[^]/g, (match) => {
+		const code = match.charCodeAt(0)
+
+		return code < 16
+			? `0${code.toString(16)}`
+			: code.toString(16)
+	})
+}
+
+function storeTree (entries) {
+	const content = entries.map(
+		({ hash, file, type }) => {
+			const mode = type === 'blob' ? '100644' : '40000'
+
+			return `${mode} ${file}\0${packHash(hash)}`
+		}
+	).join('')
+
+	return store(`tree ${content.length}\0${content}`)
+}
+
+function retrieveTree (hash) {
+	const content = retrieve(hash)
+
+	const regex = /(100644|40000) ([^\0]+)\0([^]{20})/g
+
+	const entries = []
+
+	let match
+	while (match = regex.exec(content)) {
+		entries.push({
+			type: match[1] === '100644' ? 'blob' : 'tree',
+			file: match[2],
+			hash: unpackHash(match[3]),
+		})
+	}
+
+	return entries
+}
+
 module.exports = {
 	storeBlob,
 	retrieveBlob,
+	storeTree,
+	retrieveTree,
 }
