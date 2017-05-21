@@ -38,7 +38,7 @@ function retrieve (hash) {
 
 	const deflated = nfs.readBinary(file)
 
-	return zlib.inflateSync(deflated).toString()
+	return zlib.inflateSync(deflated)
 }
 
 function storeBlob (value) {
@@ -50,51 +50,86 @@ function storeBlob (value) {
 function retrieveBlob (hash) {
 	const content = retrieve(hash)
 
-	return content.slice(content.indexOf('\0') + 1)
-}
-
-function packHash (string) {
-	return string.replace(/../g, (match) =>
-		String.fromCharCode(parseInt(match, 16))
-	)
-}
-
-function unpackHash (binary) {
-	return binary.replace(/[^]/g, (match) => {
-		const code = match.charCodeAt(0)
-
-		return code < 16
-			? `0${code.toString(16)}`
-			: code.toString(16)
-	})
+	return content.slice(content.indexOf('\0') + 1).toString()
 }
 
 function storeTree (entries) {
-	const content = entries.map(
-		({ hash, file, type }) => {
+	const content = entries.reduce(
+		(buffer, { hash, file, type }) => {
 			const mode = type === 'blob' ? '100644' : '40000'
 
-			return `${mode} ${file}\0${packHash(hash)}`
-		}
-	).join('')
+			return Buffer.concat([
+				buffer,
+				Buffer.from(`${mode} ${file}\0`),
+				Buffer.from(hash, 'hex'),
+			])
+		},
+		Buffer.from('')
+	)
 
-	return store(`tree ${content.length}\0${content}`)
+	return store(Buffer.concat([
+		Buffer.from(`tree ${content.length}\0`),
+		content,
+	]))
+}
+
+function parseHeader(content) {
+	const typeEnd = content.indexOf(' ')
+	const type = content.toString('utf8', 0, typeEnd)
+
+	const sizeEnd = content.indexOf('\0', typeEnd + 1)
+	const size = Number(content.toString('utf8', typeEnd, sizeEnd))
+
+	return {
+		type,
+		size,
+		index: sizeEnd,
+	}
+}
+
+function parseEntry (content, start) {
+	const modeEnd = content.indexOf(' ', start)
+	const mode = content.toString('utf8', start, modeEnd)
+
+	const fileEnd = content.indexOf('\0', modeEnd + 1)
+	const file = content.toString('utf8', modeEnd + 1, fileEnd)
+
+	const hash = content.slice(fileEnd + 1, fileEnd + 1 + 20)
+
+	return {
+		mode,
+		file,
+		hash,
+		index: fileEnd + 20,
+	}
 }
 
 function retrieveTree (hash) {
 	const content = retrieve(hash)
 
-	const regex = /(100644|40000) ([^\0]+)\0([^]{20})/g
+	const header = parseHeader(content)
+
+	if (header.size === 0) {
+		return []
+	}
 
 	const entries = []
 
-	let match
-	while (match = regex.exec(content)) {
+	let start = header.index + 1
+	while (true) {
+		const entry = parseEntry(content, start)
+
 		entries.push({
-			type: match[1] === '100644' ? 'blob' : 'tree',
-			file: match[2],
-			hash: unpackHash(match[3]),
+			type: entry.mode === '100644' ? 'blob' : 'tree',
+			file: entry.file,
+			hash: entry.hash,
 		})
+
+		if (entry.index >= header.size) {
+			break
+		}
+
+		start = entry.index + 1
 	}
 
 	return entries
@@ -111,15 +146,16 @@ function storeCommit ({ tree, parent, message }) {
 		`author Author Name <author@example.com> ${time} +0000\n` +
 		`committer Committer Name <committer@example.com> ${time} +0000\n` +
 		`\n` +
-		message
+		message +
+		`\n`
 
-	return store(`commit ${content.length}\0${content}\n\n`)
+	return store(`commit ${content.length}\0${content}`)
 }
 
 function retrieveCommit (hash) {
-	const content = retrieve(hash)
+	const content = retrieve(hash).toString()
 
-	const regex = /tree ([\da-f]{40})\n(parent ([\da-f]{40})\n)?author.+\ncommitter.+\n\n(.+)\n\n$/
+	const regex = /tree ([\da-f]{40})\n(parent ([\da-f]{40})\n)?author.+\ncommitter.+\n\n(.+)\n$/
 
 	const match = content.match(regex)
 
