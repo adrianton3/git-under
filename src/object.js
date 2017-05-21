@@ -135,16 +135,14 @@ function retrieveTree (hash) {
 	return entries
 }
 
-function storeCommit ({ tree, parent, message }) {
-	const time = 1494221973
-
-	const parents = parent ? `parent ${parent}\n` : ``
+function storeCommit ({ tree, parent, message, author, committer }) {
+	const parentString = parent ? `parent ${parent}\n` : ``
 
 	const content =
 		`tree ${tree}\n` +
-		parents +
-		`author Author Name <author@example.com> ${time} +0000\n` +
-		`committer Committer Name <committer@example.com> ${time} +0000\n` +
+		parentString +
+		`author ${author.name} <${author.email}> ${author.time.seconds} ${author.time.zone}\n` +
+		`committer ${committer.name} <${committer.email}> ${committer.time.seconds} ${committer.time.zone}\n` +
 		`\n` +
 		message +
 		`\n`
@@ -155,14 +153,49 @@ function storeCommit ({ tree, parent, message }) {
 function retrieveCommit (hash) {
 	const content = retrieve(hash).toString()
 
-	const regex = /tree ([\da-f]{40})\n(parent ([\da-f]{40})\n)?author.+\ncommitter.+\n\n(.+)\n$/
+	const commitRegex = /\0(.+)\n(?:(.+)\n)?(.+)\n(.+)\n\n([^]+)\n$/
 
-	const match = content.match(regex)
+	const [
+		,
+		treeString,
+		parentString,
+		authorString,
+		committerString,
+		message,
+	] = content.match(commitRegex)
+
+	const treeRegex = /tree ([\da-f]{40})/
+	const tree = treeString.match(treeRegex)[1]
+
+	const parentRegex = /parent ([\da-f]{40})/
+	const parent = parentString.match(parentRegex)[1]
+
+	const authorRegex = /author ([^<]+?) <([^>]+)> (\d+) ([-+\d]+)/
+	const authorMatch = authorString.match(authorRegex)
+
+	const committerRegex = /committer ([^<]+?) <([^>]+)> (\d+) ([-+\d]+)/
+	const committerMatch = committerString.match(committerRegex)
 
 	return {
-		tree: match[1],
-		parent: match[3],
-		message: match[4],
+		tree,
+		parent,
+		author: {
+			name: authorMatch[1],
+			email: authorMatch[2],
+			time: {
+				seconds: authorMatch[3],
+				zone: authorMatch[4],
+			},
+		},
+		committer: {
+			name: committerMatch[1],
+			email: committerMatch[2],
+			time: {
+				seconds: committerMatch[3],
+				zone: committerMatch[4],
+			},
+		},
+		message,
 	}
 }
 
