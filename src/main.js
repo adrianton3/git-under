@@ -5,6 +5,7 @@ const object = require('./object')
 const index = require('./index')
 const tree = require('./tree')
 const commit = require('./commit')
+const utils = require('./utils')
 
 
 const headFile = '.ndr/HEAD'
@@ -97,6 +98,7 @@ function log () {
 
 		console.log(
 			commitHash.slice(0, 7),
+			commitHash,
 			commitObject.message
 		)
 
@@ -142,6 +144,14 @@ function checkout (hashOrBranch) {
 	}
 }
 
+function delta (ancestorHash, descendantHash) {
+	const objects = utils.computeDelta(ancestorHash, descendantHash)
+
+	objects.forEach((hash) => {
+		console.log(hash)
+	})
+}
+
 module.exports = {
 	init,
 	add,
@@ -150,4 +160,5 @@ module.exports = {
 	branch,
 	checkout,
 	catFile,
+	delta,
 }

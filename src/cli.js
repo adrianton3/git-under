@@ -8,6 +8,7 @@ const {
 	branch,
 	checkout,
 	catFile,
+	delta,
 } = require('./main')
 
 
@@ -19,6 +20,7 @@ const handlers = {
 	branch,
 	checkout,
 	'cat-file': catFile,
+	'objects-delta': delta,
 }
 
 const command = process.argv[2]
