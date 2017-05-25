@@ -28,6 +28,7 @@ function buildTree (commitHash) {
 
 		return {
 			type: 'tree',
+			hash,
 			children,
 		}
 	}
@@ -76,22 +77,26 @@ function diffSets (a, b) {
 }
 
 function findCommit (start, needleHash) {
+	if (!start) {
+		return null
+	}
+
 	if (start.hash === needleHash) {
 		return start
 	}
 
-	if (start.parent) {
-		findCommit(start.parent)
-	}
+	return findCommit(start.parent, needleHash)
 }
 
-function computeDelta (ancestorHash, descendantHash) {
-	const ancestorTree = buildTree(ancestorHash)
+function computeDelta (descendantHash, ancestorHash) {
+	const descendant = buildTree(descendantHash)
 
-	const ancestorObjects = collectUntil(ancestorTree, descendantHash)
-	const descendantObjects = collectUntil(findCommit(ancestorTree, descendantHash))
+	const ancestor = findCommit(descendant, ancestorHash)
 
-	return diffSets(ancestorObjects, descendantObjects)
+	const descendantObjects = collectUntil(descendant, ancestor.hash)
+	const ancestorObjects = collectUntil(ancestor, null)
+
+	return diffSets(descendantObjects, ancestorObjects)
 }
 
 module.exports = {
