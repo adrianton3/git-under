@@ -10,12 +10,18 @@ const nfs = require('./nice-fs')
 
 const basePath = '.ndr/objects'
 
-function store (value) {
-	const hash = sha1(value)
+function store (type, body) {
+	const size = Buffer.byteLength(body)
+	const content = Buffer.concat([
+		Buffer.from(`${type} ${size}\0`),
+		body,
+	])
+
+	const hash = sha1(content)
 	const prefix = hash.slice(0, 2)
 	const suffix = hash.slice(2)
 
-	const deflated = zlib.deflateSync(value)
+	const deflated = zlib.deflateSync(content)
 
 	const directory = path.join(basePath, prefix)
 	if (!nfs.exists(directory)) {
@@ -38,23 +44,33 @@ function retrieve (hash) {
 
 	const deflated = nfs.readBinary(file)
 
-	return zlib.inflateSync(deflated)
+	const content = zlib.inflateSync(deflated)
+
+	const typeEnd = content.indexOf(' ')
+	const type = content.slice(0, typeEnd).toString()
+
+	const sizeEnd = content.indexOf('\0', typeEnd + 1)
+	const size = Number(content.slice(typeEnd, sizeEnd).toString())
+
+	const body = content.slice(sizeEnd + 1)
+
+	return {
+		type,
+		size,
+		body,
+	}
 }
 
-function storeBlob (value) {
-	const size = Buffer.byteLength(value, 'utf8')
-
-	return store(`blob ${size}\0${value}`)
+function storeBlob (body) {
+	return store('blob', Buffer.from(body))
 }
 
 function retrieveBlob (hash) {
-	const content = retrieve(hash)
-
-	return content.slice(content.indexOf('\0') + 1).toString()
+	return retrieve(hash).body.toString()
 }
 
 function storeTree (entries) {
-	const content = entries.reduce(
+	const body = entries.reduce(
 		(buffer, { hash, file, type }) => {
 			const mode = type === 'blob' ? '100644' : '40000'
 
@@ -67,24 +83,7 @@ function storeTree (entries) {
 		Buffer.from('')
 	)
 
-	return store(Buffer.concat([
-		Buffer.from(`tree ${content.length}\0`),
-		content,
-	]))
-}
-
-function parseHeader(content) {
-	const typeEnd = content.indexOf(' ')
-	const type = content.toString('utf8', 0, typeEnd)
-
-	const sizeEnd = content.indexOf('\0', typeEnd + 1)
-	const size = Number(content.toString('utf8', typeEnd, sizeEnd))
-
-	return {
-		type,
-		size,
-		index: sizeEnd,
-	}
+	return store('tree', body)
 }
 
 function parseEntry (content, start) {
@@ -94,7 +93,7 @@ function parseEntry (content, start) {
 	const fileEnd = content.indexOf('\0', modeEnd + 1)
 	const file = content.toString('utf8', modeEnd + 1, fileEnd)
 
-	const hash = content.slice(fileEnd + 1, fileEnd + 1 + 20)
+	const hash = content.slice(fileEnd + 1, fileEnd + 1 + 20).toString('hex')
 
 	return {
 		mode,
@@ -105,19 +104,17 @@ function parseEntry (content, start) {
 }
 
 function retrieveTree (hash) {
-	const content = retrieve(hash)
-
-	const header = parseHeader(content)
-
-	if (header.size === 0) {
-		return []
-	}
+	const { size, body } = retrieve(hash)
 
 	const entries = []
 
-	let start = header.index + 1
+	let index = 0
 	while (true) {
-		const entry = parseEntry(content, start)
+		if (index >= size) {
+			break
+		}
+
+		const entry = parseEntry(body, index)
 
 		entries.push({
 			type: entry.mode === '100644' ? 'blob' : 'tree',
@@ -125,11 +122,7 @@ function retrieveTree (hash) {
 			hash: entry.hash,
 		})
 
-		if (entry.index >= header.size) {
-			break
-		}
-
-		start = entry.index + 1
+		index = entry.index + 1
 	}
 
 	return entries
@@ -147,13 +140,13 @@ function storeCommit ({ tree, parent, message, author, committer }) {
 		message +
 		`\n`
 
-	return store(`commit ${content.length}\0${content}`)
+	return store('commit', Buffer.from(content))
 }
 
 function retrieveCommit (hash) {
-	const content = retrieve(hash).toString()
+	const body = retrieve(hash).body.toString()
 
-	const commitRegex = /\0(.+)\n(?:(.+)\n)?(.+)\n(.+)\n\n([^]+)\n$/
+	const commitRegex = /^(.+)\n(?:(.+)\n)?(.+)\n(.+)\n\n([^]+)\n$/
 
 	const [
 		,
@@ -162,13 +155,13 @@ function retrieveCommit (hash) {
 		authorString,
 		committerString,
 		message,
-	] = content.match(commitRegex)
+	] = body.match(commitRegex)
 
 	const treeRegex = /tree ([\da-f]{40})/
 	const tree = treeString.match(treeRegex)[1]
 
 	const parentRegex = /parent ([\da-f]{40})/
-	const parent = parentString.match(parentRegex)[1]
+	const parent = parentString ? parentString.match(parentRegex)[1] : null
 
 	const authorRegex = /author ([^<]+?) <([^>]+)> (\d+) ([-+\d]+)/
 	const authorMatch = authorString.match(authorRegex)
