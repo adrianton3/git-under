@@ -6,6 +6,7 @@ const index = require('./index')
 const tree = require('./tree')
 const commit = require('./commit')
 const utils = require('./utils')
+const remote = require('./remote')
 
 
 const headFile = '.ndr/HEAD'
@@ -152,6 +153,10 @@ function delta (ancestorHash, descendantHash) {
 	})
 }
 
+function push (url) {
+	remote.push(url)
+}
+
 module.exports = {
 	init,
 	add,
@@ -161,4 +166,5 @@ module.exports = {
 	checkout,
 	catFile,
 	delta,
+	push,
 }

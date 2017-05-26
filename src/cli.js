@@ -9,6 +9,7 @@ const {
 	checkout,
 	catFile,
 	delta,
+	push,
 } = require('./main')
 
 
@@ -21,6 +22,7 @@ const handlers = {
 	checkout,
 	'cat-file': catFile,
 	'objects-delta': delta,
+	push,
 }
 
 const command = process.argv[2]
