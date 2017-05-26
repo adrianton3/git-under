@@ -58,7 +58,9 @@ function push (url) {
 			body: content,
 		}).then((response) => {
 			console.log('--- push response ---')
-			console.log(response)
+			pkt.decode(response).forEach((line) => {
+				console.log(line.toString())
+			})
 		}).catch((error) => {
 			console.log('--- error while trying to push ---')
 			console.log(error)
