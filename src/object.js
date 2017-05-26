@@ -163,10 +163,10 @@ function retrieveCommit (hash) {
 	const parentRegex = /parent ([\da-f]{40})/
 	const parent = parentString ? parentString.match(parentRegex)[1] : null
 
-	const authorRegex = /author ([^<]+?) <([^>]+)> (\d+) ([-+\d]+)/
+	const authorRegex = /author ([^<]+?) (?:<([^>]+)> )?(\d+) ([-+\d]+)/
 	const authorMatch = authorString.match(authorRegex)
 
-	const committerRegex = /committer ([^<]+?) <([^>]+)> (\d+) ([-+\d]+)/
+	const committerRegex = /committer ([^<]+?) (?:<([^>]+)> )?(\d+) ([-+\d]+)/
 	const committerMatch = committerString.match(committerRegex)
 
 	return {
@@ -193,6 +193,7 @@ function retrieveCommit (hash) {
 }
 
 module.exports = {
+	retrieve,
 	storeBlob,
 	retrieveBlob,
 	storeTree,
