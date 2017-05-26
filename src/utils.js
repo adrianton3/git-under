@@ -93,6 +93,10 @@ function computeDelta (descendantHash, ancestorHash) {
 
 	const ancestor = findCommit(descendant, ancestorHash)
 
+	if (!ancestor) {
+		return Array.from(collectUntil(descendant, null))
+	}
+
 	const descendantObjects = collectUntil(descendant, ancestor.hash)
 	const ancestorObjects = collectUntil(ancestor, null)
 
