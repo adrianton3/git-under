@@ -125,6 +125,19 @@ function branch (name) {
 	nfs.write(`.ndr/refs/${name}`, commitHash)
 }
 
+function branchList () {
+	const head = nfs.readJson(headFile)
+	const headBranch = head.type !== 'ref'
+		? null
+		: head.ref.match(/\/(\w+)$/)[1]
+
+	const branches = nfs.readdir(`.ndr/refs`)
+
+	branches.forEach((branch) => {
+		console.log(headBranch === branch ? '*' : ' ', branch)
+	})
+}
+
 function checkout (hashOrBranch) {
 	const isHash = /[\da-f]{7}/.test(hashOrBranch)
 
@@ -163,6 +176,7 @@ module.exports = {
 	commit: commitCommand,
 	log,
 	branch,
+	branchList,
 	checkout,
 	catFile,
 	delta,

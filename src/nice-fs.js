@@ -15,6 +15,10 @@ function readBinary (file) {
 	return fs.readFileSync(file)
 }
 
+function readdir (file) {
+	return fs.readdirSync(file)
+}
+
 function write (file, value) {
 	fs.writeFileSync(file, value)
 }
@@ -37,6 +41,7 @@ module.exports = {
 	read,
 	readJson,
 	readBinary,
+	readdir,
 	write,
 	writeJson,
 	exists,

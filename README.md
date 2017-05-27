@@ -6,13 +6,12 @@ Basic git client in JavaScript created for educational purposes.
 Supports:
 
 + `init`
-+ `add <path/file.txt>`
++ `add <path/to/file.txt>`
 + `commit <message>`
 + `cat-file <type> <hash>`
 + `log`
-+ `branch <name>`
-+ `checkout <branch>`
-+ `checkout <hash>`
++ `branch [name]`
++ `checkout <branch|hash>`
 + `push <url>` - pushing also requires the NDR_USERNAME and NDR_PASSWORD
 environment variables to hold the credentials for the remote repository
 + `objects-delta <descendant-hash> <ancestor-hash>` - computes the difference

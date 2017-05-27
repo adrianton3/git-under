@@ -8,6 +8,7 @@ const {
 	commit,
 	log,
 	branch,
+	branchList,
 	checkout,
 	catFile,
 	delta,
@@ -45,11 +46,15 @@ yargs
 		},
 	})
 	.command({
-		command: 'branch <name>',
+		command: 'branch [name]',
 		aliases: ['br'],
 		desc: 'create a new branch and set HEAD to it',
 		handler ({ name }) {
-			branch(name)
+			if (name) {
+				branch(name)
+			} else {
+				branchList()
+			}
 		},
 	})
 	.command({
