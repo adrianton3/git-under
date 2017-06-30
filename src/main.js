@@ -1,5 +1,7 @@
 'use strict'
 
+const { basename } = require('path')
+
 const nfs = require('./nice-fs')
 const object = require('./object')
 const index = require('./index')
@@ -129,7 +131,7 @@ function branchList () {
 	const head = nfs.readJson(headFile)
 	const headBranch = head.type !== 'ref'
 		? null
-		: head.ref.match(/\/(\w+)$/)[1]
+		: basename(head.ref)
 
 	const branches = nfs.readdir(`.ndr/refs`)
 
