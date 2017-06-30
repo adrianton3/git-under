@@ -47,6 +47,12 @@ function commitInitial (message) {
 	nfs.write(`.ndr/${head.ref}`, commitHash)
 }
 
+function getHeadHash (head) {
+	return head.type === 'ref'
+		? nfs.read(`.ndr/${head.ref}`)
+		: head.hash
+}
+
 function commitNoninitial (message) {
 	const indexValue = index.retrieve()
 
@@ -54,9 +60,7 @@ function commitNoninitial (message) {
 
 	const head = nfs.readJson(headFile)
 
-	const commitHash = head.type === 'ref'
-		? nfs.read(`.ndr/${head.ref}`)
-		: head.hash
+	const commitHash = getHeadHash(head)
 
 	const commitObject = commit.retrieve(commitHash)
 
@@ -108,9 +112,7 @@ function log () {
 		}
 	}
 
-	const commitHash = head.type === 'ref'
-		? nfs.read(`.ndr/${head.ref}`)
-		: head.hash
+	const commitHash = getHeadHash(head)
 
 	traverse(commitHash)
 }
@@ -118,9 +120,7 @@ function log () {
 function branch (name) {
 	const head = nfs.readJson(headFile)
 
-	const commitHash = head.type === 'ref'
-		? nfs.read(`.ndr/${head.ref}`)
-		: head.hash
+	const commitHash = getHeadHash(head)
 
 	nfs.write(`.ndr/refs/${name}`, commitHash)
 }
